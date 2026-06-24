@@ -5,10 +5,13 @@ DROP TABLE IF EXISTS fact_aum;
 DROP TABLE IF EXISTS dim_fund;
 DROP TABLE IF EXISTS dim_date;
 
+-- =========================================================
+-- Dimension Table: dim_fund
+-- =========================================================
 CREATE TABLE dim_fund (
     amfi_code INTEGER PRIMARY KEY,
-    fund_house TEXT,
-    scheme_name TEXT,
+    fund_house TEXT NOT NULL,
+    scheme_name TEXT NOT NULL,
     category TEXT,
     sub_category TEXT,
     plan TEXT,
@@ -23,9 +26,12 @@ CREATE TABLE dim_fund (
     sebi_category_code TEXT
 );
 
+-- =========================================================
+-- Dimension Table: dim_date
+-- =========================================================
 CREATE TABLE dim_date (
-    date_id INTEGER PRIMARY KEY auto_increment,
-    full_date DATE UNIQUE,
+    date_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    full_date DATE UNIQUE NOT NULL,
     year INTEGER,
     quarter INTEGER,
     month INTEGER,
@@ -34,21 +40,27 @@ CREATE TABLE dim_date (
     weekday_name TEXT
 );
 
+-- =========================================================
+-- Fact Table: fact_nav
+-- =========================================================
 CREATE TABLE fact_nav (
-    nav_id INTEGER PRIMARY KEY auto_increment,
-    amfi_code INTEGER,
-    nav_date DATE,
-    nav REAL,
+    nav_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    amfi_code INTEGER NOT NULL,
+    nav_date DATE NOT NULL,
+    nav REAL NOT NULL,
     FOREIGN KEY (amfi_code) REFERENCES dim_fund(amfi_code)
 );
 
+-- =========================================================
+-- Fact Table: fact_transactions
+-- =========================================================
 CREATE TABLE fact_transactions (
-    transaction_id INTEGER PRIMARY KEY auto_increment,
-    investor_id TEXT,
-    transaction_date DATE,
-    amfi_code INTEGER,
-    transaction_type TEXT,
-    amount_inr REAL,
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    investor_id TEXT NOT NULL,
+    transaction_date DATE NOT NULL,
+    amfi_code INTEGER NOT NULL,
+    transaction_type TEXT NOT NULL,
+    amount_inr REAL NOT NULL,
     state TEXT,
     city TEXT,
     city_tier TEXT,
@@ -60,9 +72,12 @@ CREATE TABLE fact_transactions (
     FOREIGN KEY (amfi_code) REFERENCES dim_fund(amfi_code)
 );
 
+-- =========================================================
+-- Fact Table: fact_performance
+-- =========================================================
 CREATE TABLE fact_performance (
     performance_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    amfi_code INTEGER,
+    amfi_code INTEGER NOT NULL,
     return_1yr_pct REAL,
     return_3yr_pct REAL,
     return_5yr_pct REAL,
@@ -80,10 +95,13 @@ CREATE TABLE fact_performance (
     FOREIGN KEY (amfi_code) REFERENCES dim_fund(amfi_code)
 );
 
+-- =========================================================
+-- Fact Table: fact_aum
+-- =========================================================
 CREATE TABLE fact_aum (
-    aum_id INTEGER PRIMARY KEY auto_increment,
-    aum_date DATE,
-    fund_house TEXT,
+    aum_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aum_date DATE NOT NULL,
+    fund_house TEXT NOT NULL,
     aum_lakh_crore REAL,
     aum_crore REAL,
     num_schemes INTEGER

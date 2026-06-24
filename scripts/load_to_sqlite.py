@@ -1,14 +1,18 @@
 import pandas as pd
-from sqlalchemy import create_engine, text
+import sqlite3
+import os
 
 DB_PATH = "bluestock_mf.db"
 PROCESSED_PATH = "data/processed"
+SCHEMA_PATH = "sql/schema.sql"
 
-engine = create_engine(f"sqlite:///{DB_PATH}")
+print("=" * 80)
+print("DAY 2 - SQLITE LOADING STARTED")
+print("=" * 80)
 
-# ============================
+# =========================================================
 # Load processed datasets
-# ============================
+# =========================================================
 fund_master = pd.read_csv(f"{PROCESSED_PATH}/01_fund_master_cleaned.csv")
 nav_history = pd.read_csv(f"{PROCESSED_PATH}/02_nav_history_cleaned.csv")
 aum = pd.read_csv(f"{PROCESSED_PATH}/03_aum_by_fund_house_cleaned.csv")
@@ -20,9 +24,9 @@ transactions = pd.read_csv(f"{PROCESSED_PATH}/08_investor_transactions_cleaned.c
 holdings = pd.read_csv(f"{PROCESSED_PATH}/09_portfolio_holdings_cleaned.csv")
 benchmark = pd.read_csv(f"{PROCESSED_PATH}/10_benchmark_indices_cleaned.csv")
 
-# ============================
-# Prepare date dimension
-# ============================
+# =========================================================
+# Create dim_date from all available dates
+# =========================================================
 all_dates = pd.concat([
     pd.to_datetime(nav_history["date"], errors="coerce"),
     pd.to_datetime(aum["date"], errors="coerce"),
@@ -42,13 +46,12 @@ dim_date["month_name"] = dim_date["full_date"].dt.month_name()
 dim_date["day"] = dim_date["full_date"].dt.day
 dim_date["weekday_name"] = dim_date["full_date"].dt.day_name()
 
-# ============================
-# Rename columns for fact tables
-# ============================
+# =========================================================
+# Prepare fact tables
+# =========================================================
 nav_fact = nav_history.rename(columns={"date": "nav_date"})
 aum_fact = aum.rename(columns={"date": "aum_date"})
 
-# performance columns to keep only fact columns
 performance_fact = performance[
     [
         "amfi_code", "return_1yr_pct", "return_3yr_pct", "return_5yr_pct",
@@ -58,7 +61,6 @@ performance_fact = performance[
     ]
 ].copy()
 
-# transactions columns to keep
 transactions_fact = transactions[
     [
         "investor_id", "transaction_date", "amfi_code", "transaction_type",
@@ -67,21 +69,37 @@ transactions_fact = transactions[
     ]
 ].copy()
 
-# ============================
-# Load into SQLite
-# ============================
-fund_master.to_sql("dim_fund", engine, if_exists="replace", index=False)
-dim_date.to_sql("dim_date", engine, if_exists="replace", index=False)
-nav_fact.to_sql("fact_nav", engine, if_exists="replace", index=False)
-transactions_fact.to_sql("fact_transactions", engine, if_exists="replace", index=False)
-performance_fact.to_sql("fact_performance", engine, if_exists="replace", index=False)
-aum_fact.to_sql("fact_aum", engine, if_exists="replace", index=False)
+# =========================================================
+# Create SQLite DB and execute schema.sql
+# =========================================================
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+
+with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
+    schema_sql = f.read()
+
+cursor.executescript(schema_sql)
+conn.commit()
+
+print("Schema executed successfully from sql/schema.sql")
+
+# =========================================================
+# Load data into SQLite tables
+# =========================================================
+fund_master.to_sql("dim_fund", conn, if_exists="append", index=False)
+dim_date.to_sql("dim_date", conn, if_exists="append", index=False)
+nav_fact.to_sql("fact_nav", conn, if_exists="append", index=False)
+transactions_fact.to_sql("fact_transactions", conn, if_exists="append", index=False)
+performance_fact.to_sql("fact_performance", conn, if_exists="append", index=False)
+aum_fact.to_sql("fact_aum", conn, if_exists="append", index=False)
+
+conn.commit()
 
 print("All cleaned datasets loaded into SQLite successfully.")
 
-# ============================
+# =========================================================
 # Verify row counts
-# ============================
+# =========================================================
 tables = [
     "dim_fund",
     "dim_date",
@@ -91,9 +109,14 @@ tables = [
     "fact_aum"
 ]
 
-with engine.connect() as conn:
-    print("\nRow Counts in SQLite Database")
-    print("-" * 40)
-    for table in tables:
-        count = conn.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar()
-        print(f"{table}: {count}")
+print("\nRow Counts in SQLite Database")
+print("-" * 50)
+
+for table in tables:
+    count = pd.read_sql_query(f"SELECT COUNT(*) AS cnt FROM {table}", conn)["cnt"][0]
+    print(f"{table}: {count}")
+
+conn.close()
+
+print("\nSQLite loading completed successfully.")
+print(f"Database created at: {DB_PATH}")

@@ -1,11 +1,11 @@
-dataset,before_rows,after_rows,rows_removed,notes
-01_fund_master,40,40,0,"Stripped text columns, converted launch_date to datetime, removed duplicates."
-02_nav_history,46000,46000,0,"Parsed dates, sorted by amfi_code/date, removed duplicates, validated NAV > 0, forward-filled NAV within each amfi_code."
-03_aum_by_fund_house,90,90,0,Converted date to datetime and removed duplicates.
-04_monthly_sip_inflows,48,48,0,Converted month to datetime. Kept YoY null values because early months may not have prior-year base.
-05_category_inflows,144,144,0,Converted month to datetime and removed duplicates.
-06_industry_folio_count,21,21,0,Converted month to datetime and removed duplicates.
-07_scheme_performance,40,40,0,"Validated numeric return fields, flagged expense_ratio outside 0.1%–2.5%, removed duplicates."
-08_investor_transactions,32778,32778,0,"Standardized transaction_type, validated amount > 0, parsed dates, checked KYC enum values, removed duplicates."
-09_portfolio_holdings,322,322,0,Converted portfolio_date to datetime and removed duplicates.
-10_benchmark_indices,8050,8050,0,Converted date to datetime and removed duplicates.
+dataset,before_rows,after_rows,rows_removed,duplicates_removed,nulls_before,nulls_after,notes
+01_fund_master,40,40,0,0,0,0,"Trimmed text fields, converted launch_date to datetime, removed duplicates."
+02_nav_history,46000,46000,0,0,0,0,"Parsed date, sorted by amfi_code/date, removed duplicates, validated NAV > 0, forward-filled NAV within each AMFI code."
+03_aum_by_fund_house,90,90,0,0,0,0,Converted date to datetime and removed duplicates.
+04_monthly_sip_inflows,48,48,0,0,12,12,Converted month to datetime. YoY growth nulls retained where prior-year comparison was unavailable.
+05_category_inflows,144,144,0,0,0,0,Converted month to datetime and removed duplicates.
+06_industry_folio_count,21,21,0,0,0,0,Converted month to datetime and removed duplicates.
+07_scheme_performance,40,40,0,0,0,0,"Validated numeric return fields, converted metrics to numeric, flagged expense ratio anomalies outside 0.1%–2.5%, removed duplicates."
+08_investor_transactions,32778,32778,0,0,0,0,"Standardized transaction types, validated amount > 0, parsed transaction dates, standardized KYC values, flagged invalid KYC enum values, removed duplicates."
+09_portfolio_holdings,322,322,0,0,0,0,Converted portfolio_date to datetime and removed duplicates.
+10_benchmark_indices,8050,8050,0,0,0,0,Converted date to datetime and removed duplicates.
